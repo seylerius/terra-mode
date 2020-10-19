@@ -149,7 +149,9 @@
                     ;; Terra keywords
                     "defer" "emit" "escape" "import" "quote" "struct" "terra"
                     "var" "match" "switch" "case" "enum"
-                    ))))
+                    ))
+           (terra-operator-class
+            (any "-" "+" "*" "/" "^" "." "=" "<" ">" "~" ":" "&" "|"))))
 
         (defmacro terra-rx (&rest regexps)
           (eval `(rx-let ,terra--rx-bindings
@@ -1257,34 +1259,32 @@ Returns final value of point as integer or nil if operation failed."
                   (terra-comment-or-string-p))
         (throw 'found (point))))))
 
-(eval-when-compile
-  (defconst terra-operator-class
-    "-+*/^.=<>~:&|"))
-
 (defconst terra-cont-eol-regexp
   (eval-when-compile
-    (concat
-     "\\(\\_<"
-     (regexp-opt '("and" "or" "not" "in" "for" "while"
-                   "local" "function" "if" "until" "elseif" "return"
+    (,(terra-rx-to-string
+       (seq
+        (group
+         (or
+          (symbol
+           "and" "or" "not" "in" "for" "while"
+           "local" "function" "if" "until" "elseif" "return"
 
-                   ;; Terra keywords
-                   "defer"
-                   "emit"
-                   "escape"
-                   "import"
-                   "quote"
-                   "terra"
-                   "var")
-                 t)
-     "\\_>\\|"
-     "\\(^\\|[^" terra-operator-class "]\\)"
-     (regexp-opt '("+" "-" "*" "/" "%" "^" ".." "=="
-                   "=" "<" ">" "<=" ">=" "~=" "." ":"
-                   "&" "|" "~" ">>" "<<" "~")
-                 t)
-     "\\)"
-     "\\s *\\="))
+           ;; Terra keywords
+           "defer"
+           "emit"
+           "escape"
+           "import"
+           "quote"
+           "terra"
+           "var")
+          (group
+           (or line-start
+               (not terra-operator-class)))
+          (symbol "+" "-" "*" "/" "%" "^" ".." "=="
+                  "=" "<" ">" "<=" ">=" "~=" "." ":"
+                  "&" "|" "~" ">>" "<<" "~")))
+        ws (* " ") point
+        ))))
   "Regexp that matches the ending of a line that needs continuation.
 
 This regexp starts from eol and looks for a binary operator or an unclosed
@@ -1293,17 +1293,16 @@ an optional whitespace till the end of the line.")
 
 (defconst terra-cont-bol-regexp
   (eval-when-compile
-    (concat
-     "\\=\\s *"
-     "\\(\\_<"
-     (regexp-opt '("and" "or" "not") t)
-     "\\_>\\|"
-     (regexp-opt '("+" "-" "*" "/" "%" "^" ".." "=="
-                   "=" "<" ">" "<=" ">=" "~=" "." ":"
-                   "&" "|" "~" ">>" "<<" "~")
-                 t)
-     "\\($\\|[^" terra-operator-class "]\\)"
-     "\\)"))
+    (,(terra-rx-to-string
+       'point ws (* " ")
+       (group
+        (or (symbol "and" "or" "not")
+            (symbol "+" "-" "*" "/" "%" "^" ".." "=="
+                    "=" "<" ">" "<=" ">=" "~=" "." ":"
+                    "&" "|" "~" ">>" "<<" "~")
+            (group
+             (or line-end
+                 (not terra-operator-class))))))))
   "Regexp that matches a line that continues previous one.
 
 This regexp means, starting from point there is an optional whitespace followed

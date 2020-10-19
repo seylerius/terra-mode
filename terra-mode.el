@@ -1270,11 +1270,14 @@ Returns final value of point as integer or nil if operation failed."
            "local" "function" "if" "until" "elseif" "return"
 
            ;; Terra keywords
+           "case"
            "defer"
            "emit"
            "escape"
            "import"
+           "match"
            "quote"
+           "switch"
            "terra"
            "var")
           (group
@@ -1282,7 +1285,7 @@ Returns final value of point as integer or nil if operation failed."
                (not terra-operator-class)))
           (symbol "+" "-" "*" "/" "%" "^" ".." "=="
                   "=" "<" ">" "<=" ">=" "~=" "." ":"
-                  "&" "|" "~" ">>" "<<" "~")))
+                  "&" "|" "~" ">>" "<<" "~" "->")))
         ws (* " ") point
         ))))
   "Regexp that matches the ending of a line that needs continuation.
@@ -1299,7 +1302,7 @@ an optional whitespace till the end of the line.")
         (or (symbol "and" "or" "not")
             (symbol "+" "-" "*" "/" "%" "^" ".." "=="
                     "=" "<" ">" "<=" ">=" "~=" "." ":"
-                    "&" "|" "~" ">>" "<<" "~")
+                    "&" "|" "~" ">>" "<<" "~" "->")
             (group
              (or line-end
                  (not terra-operator-class))))))))

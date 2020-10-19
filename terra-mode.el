@@ -734,7 +734,8 @@ Groups 6-9 can be used in any of argument regexps."
 (define-abbrev-table 'terra-mode-abbrev-table
   '(("end"    "end"    terra-indent-line :system t)
     ("else"   "else"   terra-indent-line :system t)
-    ("elseif" "elseif" terra-indent-line :system t)))
+    ("elseif" "elseif" terra-indent-line :system t)
+    ("case"   "case"   terra-indent-line :system t)))
 
 (defvar terra-mode-syntax-table
   (with-syntax-table (copy-syntax-table)

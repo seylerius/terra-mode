@@ -1272,11 +1272,8 @@ Returns final value of point as integer or nil if operation failed."
            ;; Terra keywords
            "case"
            "defer"
-           "emit"
-           "escape"
            "import"
            "match"
-           "quote"
            "switch"
            "terra"
            "var")

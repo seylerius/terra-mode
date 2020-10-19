@@ -139,7 +139,7 @@
                        ">" "=" ";" ":" "," "." ".." "..."
 
                        ;; Terra tokens
-                       "`" "@"
+                       "`" "@" "->"
                        ))
            (terra-keyword
             (symbol "and" "break" "do" "else" "elseif" "end"  "for" "function"
@@ -148,7 +148,7 @@
 
                     ;; Terra keywords
                     "defer" "emit" "escape" "import" "quote" "struct" "terra"
-                    "var"
+                    "var" "match" "switch" "case" "enum"
                     ))))
 
         (defmacro terra-rx (&rest regexps)

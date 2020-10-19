@@ -725,7 +725,8 @@ Groups 6-9 can be used in any of argument regexps."
                       ;; Terra keywords
                       ("escape" . "end")
                       ("quote" . "end")
-                      ("terra" . "end")))
+                      ("terra" . "end")
+                      ("with" . "end")))
 
 (defvar terra-mode-abbrev-table nil
   "Abbreviation table used in terra-mode buffers.")

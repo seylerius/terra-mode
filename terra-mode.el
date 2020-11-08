@@ -1093,25 +1093,25 @@ BACKWARDS-MATCH-REGEXP is a regexp that matches all possible tokens when going b
 TOKEN-TYPE determines where the token occurs on a statement. open indicates that the token appears at start, close indicates that it appears at end, middle indicates that it is a middle type token, and middle-or-open indicates that it can appear both as a middle or an open type.")
 
 (defconst terra-indentation-modifier-regexp
-  ;; The absence of else is deliberate, since it does not modify the
-  ;; indentation level per se. It only may cause the line, in which the
-  ;; else is, to be shifted to the left.
-  (concat
-   "\\(\\_<"
-   (regexp-opt '("do" "function" "repeat" "then" "if" "else" "elseif" "for" "while"
+  (terra-rx-to-string
+   (or
+    (group
+     (or
+      (symbol "do" "function" "repeat" "then" "if" "else" "elseif" "for" "while"
 
-                 ;; Terra keywords
-                 "escape"
-                 "quote"
-                 "terra") t)
-   "\\_>\\|"
-   (regexp-opt '("{" "(" "["))
-   "\\)\\|\\(\\_<"
-   (regexp-opt '("end" "until") t)
-   "\\_>\\|"
-   (regexp-opt '("]" ")" "}"))
-   "\\)")
-  )
+              ;; Terra keywords
+              "escape"
+              "quote"
+              "terra"
+              "case"
+              "switch"
+              "match"
+              "with")
+      (or "{" "(" "[")))
+    (group
+     (or
+      (symbol "end" "until")
+      (or "]" ")" "}"))))))
 
 (defun terra-get-block-token-info (token)
   "Returns the block token info entry for TOKEN from terra-block-token-alist"

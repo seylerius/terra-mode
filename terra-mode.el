@@ -1061,29 +1061,92 @@ ignored, nil otherwise."
      "\\_>\\)\\|"
      (regexp-opt '("{" "(" "[" "]" ")" "}") t))))
 
+(defmacro tsym (&rest symbols)
+  `(terra-rx-to-string ,(cons 'symbol symbols))
+
 (defconst terra-block-token-alist
-  '(("do"       "\\_<end\\_>"   "\\_<for\\|while\\_>"                       middle-or-open)
-    ("function" "\\_<end\\_>"   nil                                       open)
-    ("repeat"   "\\_<until\\_>" nil                                       open)
-    ("then"     "\\_<\\(e\\(lse\\(if\\)?\\|nd\\)\\)\\_>" "\\_<\\(else\\)?if\\_>" middle)
+  ;; KEYWORD FORWARD-MATCH-REGEXP BACKWARDS-MATCH-REGEXP TOKEN-TYPE
+  `(("do"
+     ,(terra-rx-to-string (symbol "end" "else"))
+     ,(terra-rx-to-string (symbol "for" "while"))
+     middle-or-open)
+    ("function"
+     ,(terra-rx-to-string (symbol "end"))
+     nil
+     open)
+    ("repeat"
+     ,(terra-rx-to-string (symbol "until"))
+     nil
+     open)
+    ("then"
+     ,(terra-rx-to-string (symbol "else" "elseif" "end" "case"))
+     ,(terra-rx-to-string (symbol "if" "elseif" "case"))
+     middle)
     ("{"        "}"           nil                                       open)
     ("["        "]"           nil                                       open)
     ("("        ")"           nil                                       open)
-    ("if"       "\\_<then\\_>"  nil                                       open)
-    ("for"      "\\_<do\\_>"    nil                                       open)
-    ("while"    "\\_<do\\_>"    nil                                       open)
-    ("else"     "\\_<end\\_>"   "\\_<then\\_>"                              middle)
-    ("elseif"   "\\_<then\\_>"  "\\_<then\\_>"                              middle)
-    ("end"      nil           "\\_<\\(do\\|function\\|then\\|else\\|escape\\|quote\\|terra\\)\\_>" close) ;; Terra keywords
-    ("until"    nil           "\\_<repeat\\_>"                            close)
+    ("if"
+     ,(terra-rx-to-string (symbol "then"))
+     nil
+     open)
+    ("for"
+     ,(terra-rx-to-string (symbol "do"))
+     nil
+     open)
+    ("while"
+     ,(terra-rx-to-string (symbol "do"))
+     nil
+     open)
+    ("else"
+     ,(terra-rx-to-string (symbol "end"))
+     ,(terra-rx-to-string (symbol "then"))
+     middle)
+    ("elseif"
+     ,(terra-rx-to-string (symbol "then"))
+     ,(terra-rx-to-string (symbol "then"))
+     middle)
+    ("end"
+     nil
+     ,(terra-rx-to-string (symbol "do" "function" "then" "else" "escape" "quote"
+                                  "terra" "with"))
+     close) ;; Terra keywords
+    ("until"
+     nil
+     ,(terra-rx-to-string (symbol "repeat"))
+     close)
     ("}"        nil           "{"                                       close)
     ("]"        nil           "\\["                                     close)
     (")"        nil           "("                                       close)
 
     ;; Terra keywords
-    ("escape"   "\\_<end\\_>" nil                                       open)
-    ("quote"    "\\_<end\\_>" nil                                       open)
-    ("terra"    "\\_<end\\_>" nil                                       open))
+    ("escape"
+     ,(terra-rx-to-string (symbol "end"))
+     nil
+     open)
+    ("quote"
+     ,(terra-rx-to-string (symbol "end"))
+     nil
+     open)
+    ("terra"
+     ,(terra-rx-to-string (symbol "end"))
+     nil
+     open)
+    ("switch"
+     ,(terra-rx-to-string (symbol "do"))
+     nil
+     open)
+    ("case"
+     ,(terra-rx-to-string (symbol "then"))
+     ,(terra-rx-to-string (symbol "do" "then"))
+     middle)
+    ("match"
+     ,(terra-rx-to-string (symbol "with"))
+     nil
+     open)
+    ("with"
+     ,(terra-rx-to-string (symbol "then" "end"))
+     ,(terra-rx-to-string (symbol "match"))
+     middle))
   "This is a list of block token information blocks.
 Each token information entry is of the form:
   KEYWORD FORWARD-MATCH-REGEXP BACKWARDS-MATCH-REGEXP TOKEN-TYPE

@@ -124,7 +124,7 @@
 
            (terra-name (symbol (seq (+ (any alpha "_")) (* (any alnum "_")))))
            (terra-funcname (seq terra-name (* ws "." ws terra-name)
-                           (opt ws ":" ws terra-name)))
+                                (opt ws ":" ws terra-name)))
            (terra-funcheader
             ;; Outer (seq ...) is here to shy-group the definition
             (seq (or (seq (symbol "function") ws (group-n 1 terra-funcname))
@@ -132,15 +132,15 @@
                           (symbol "function")))))
            (terra-number
             (seq (or (seq (+ digit) (opt ".") (* digit))
-                         (seq (* digit) (opt ".") (+ digit)))
-                     (opt (regexp "[eE][+-]?[0-9]+"))))
+                     (seq (* digit) (opt ".") (+ digit)))
+                 (opt (regexp "[eE][+-]?[0-9]+"))))
            (terra-assignment-op (seq "=" (or buffer-end (not (any "=")))))
            (terra-token (or "+" "-" "*" "/" "%" "^" "#" "==" "~=" "<=" ">=" "<"
-                       ">" "=" ";" ":" "," "." ".." "..."
+                            ">" "=" ";" ":" "," "." ".." "..."
 
-                       ;; Terra tokens
-                       "`" "@" "->"
-                       ))
+                            ;; Terra tokens
+                            "`" "@" "->"
+                            ))
            (terra-keyword
             (symbol "and" "break" "do" "else" "elseif" "end"  "for" "function"
                     "goto" "if" "in" "local" "not" "or" "repeat" "return"
@@ -229,9 +229,9 @@ element is itself expanded with `terra-rx-to-string'. "
                             (seq (group-n 1 terra-funcname) ws "=" ws
                                  (symbol "function"
 
-                                     ;; Terra keywords
-                                     "struct"
-                                     "terra")))))
+                                         ;; Terra keywords
+                                         "struct"
+                                         "terra")))))
               (terra-number
                :rx (seq (or (seq (+ digit) (opt ".") (* digit))
                             (seq (* digit) (opt ".") (+ digit)))
@@ -411,8 +411,8 @@ If the latter is nil, the keymap translates into `terra-mode-map' verbatim.")
        ;; NOTE: this doesn't traverse `compilation-search-path' when
        ;; looking for filename.
        (not (file-exists-p (expand-file-name
-                        filename
-                        (when directory (expand-file-name directory))))))
+                            filename
+                            (when directory (expand-file-name directory))))))
       (setq ad-return-value (current-buffer))
     ad-do-it))
 
@@ -529,32 +529,32 @@ traceback location."
                        "offset")))))
 
       (cl-labels
-       ((module-name-re (x)
-                        (concat "\\(?1:\\_<"
-                                (if (listp x) (car x) x)
-                                "\\_>\\)"))
-        (module-members-re (x) (if (listp x)
-                                   (concat "\\(?:[ \t]*\\.[ \t]*"
-                                           "\\_<\\(?2:"
-                                           (regexp-opt (cdr x))
-                                           "\\)\\_>\\)?")
-                                 "")))
+          ((module-name-re (x)
+                           (concat "\\(?1:\\_<"
+                                   (if (listp x) (car x) x)
+                                   "\\_>\\)"))
+           (module-members-re (x) (if (listp x)
+                                      (concat "\\(?:[ \t]*\\.[ \t]*"
+                                              "\\_<\\(?2:"
+                                              (regexp-opt (cdr x))
+                                              "\\)\\_>\\)?")
+                                    "")))
 
-       (concat
-        ;; common prefix:
-        ;; - beginning-of-line
-        ;; - or neither of [ '.', ':' ] to exclude "foo.string.rep"
-        ;; - or concatenation operator ".."
-        "\\(?:^\\|[^:. \t]\\|[.][.]\\)"
-        ;; optional whitespace
-        "[ \t]*"
-        "\\(?:"
-        ;; any of modules/functions
-        (mapconcat (lambda (x) (concat (module-name-re x)
-                                       (module-members-re x)))
-                   modules
-                   "\\|")
-        "\\)"))))
+        (concat
+         ;; common prefix:
+         ;; - beginning-of-line
+         ;; - or neither of [ '.', ':' ] to exclude "foo.string.rep"
+         ;; - or concatenation operator ".."
+         "\\(?:^\\|[^:. \t]\\|[.][.]\\)"
+         ;; optional whitespace
+         "[ \t]*"
+         "\\(?:"
+         ;; any of modules/functions
+         (mapconcat (lambda (x) (concat (module-name-re x)
+                                        (module-members-re x)))
+                    modules
+                    "\\|")
+         "\\)"))))
 
   "A regexp that matches Terra builtin functions & variables.
 
@@ -657,12 +657,12 @@ Groups 6-9 can be used in any of argument regexps."
     ;; Labels used by the "goto" statement
     ;; Highlights the following syntax:  ::label::
     (,(terra-rx "::" ws terra-name ws "::")
-      . font-lock-constant-face)
+     . font-lock-constant-face)
 
     ;; Highlights the name of the label in the "goto" statement like
     ;; "goto label"
     (,(terra-rx (symbol (seq "goto" ws+ (group-n 1 terra-name))))
-      (1 font-lock-constant-face))
+     (1 font-lock-constant-face))
 
     ;; Highlight Terra builtin functions and variables
     (,terra--builtins
@@ -670,7 +670,7 @@ Groups 6-9 can be used in any of argument regexps."
 
     ("^[ \t]*\\_<for\\_>"
      (,(terra-make-delimited-matcher (terra-rx terra-name) ","
-                                   (terra-rx (or (symbol "in") terra-assignment-op)))
+                                     (terra-rx (or (symbol "in") terra-assignment-op)))
       nil nil
       (1 font-lock-variable-name-face nil noerror)
       (2 font-lock-warning-face t noerror)
@@ -695,7 +695,7 @@ Groups 6-9 can be used in any of argument regexps."
       (1 font-lock-function-name-face nil noerror))
 
      (,(terra-make-delimited-matcher (terra-rx terra-name) ","
-                                   (terra-rx terra-assignment-op))
+                                     (terra-rx terra-assignment-op))
       nil nil
       (1 font-lock-variable-name-face nil noerror)
       (2 font-lock-warning-face t noerror)
@@ -705,10 +705,10 @@ Groups 6-9 can be used in any of argument regexps."
      (1 font-lock-function-name-face))
 
     (,(terra-rx (or (group-n 1
-                           "@" (symbol "author" "copyright" "field" "release"
-                                       "return" "see" "usage" "description"))
-                  (seq (group-n 1 "@" (symbol "param" "class" "name")) ws+
-                       (group-n 2 terra-name))))
+                             "@" (symbol "author" "copyright" "field" "release"
+                                         "return" "see" "usage" "description"))
+                    (seq (group-n 1 "@" (symbol "param" "class" "name")) ws+
+                         (group-n 2 terra-name))))
      (1 font-lock-keyword-face t)
      (2 font-lock-variable-name-face t noerror)))
 
@@ -720,15 +720,15 @@ Groups 6-9 can be used in any of argument regexps."
   "Imenu generic expression for terra-mode.  See `imenu-generic-expression'.")
 
 (defvar terra-sexp-alist '(("then" . "end")
-                      ("function" . "end")
-                      ("do" . "end")
-                      ("repeat" . "until")
+                           ("function" . "end")
+                           ("do" . "end")
+                           ("repeat" . "until")
 
-                      ;; Terra keywords
-                      ("escape" . "end")
-                      ("quote" . "end")
-                      ("terra" . "end")
-                      ("with" . "end")))
+                           ;; Terra keywords
+                           ("escape" . "end")
+                           ("quote" . "end")
+                           ("terra" . "end")
+                           ("with" . "end")))
 
 (defvar terra-mode-abbrev-table nil
   "Abbreviation table used in terra-mode buffers.")
@@ -770,11 +770,11 @@ Groups 6-9 can be used in any of argument regexps."
   :syntax-table terra-mode-syntax-table
   :group 'terra
   (setq-local font-lock-defaults '(terra-font-lock-keywords ;; keywords
-                                        nil                    ;; keywords-only
-                                        nil                    ;; case-fold
-                                        nil                    ;; syntax-alist
-                                        nil                    ;; syntax-begin
-                                        ))
+                                   nil                    ;; keywords-only
+                                   nil                    ;; case-fold
+                                   nil                    ;; syntax-alist
+                                   nil                    ;; syntax-begin
+                                   ))
 
   (setq-local syntax-propertize-function
               'terra--propertize-multiline-bounds)
@@ -794,7 +794,7 @@ Groups 6-9 can be used in any of argument regexps."
     ;; If electric-indent-chars is not defined, electric indentation is done
     ;; via `terra-mode-map'.
     (setq-local electric-indent-chars
-                  (append electric-indent-chars terra--electric-indent-chars)))
+                (append electric-indent-chars terra--electric-indent-chars)))
 
 
   ;; setup menu bar entry (XEmacs style)
@@ -831,7 +831,7 @@ Groups 6-9 can be used in any of argument regexps."
   "Insert character and adjust indentation."
   (interactive "P")
   (let (blink-paren-function)
-   (self-insert-command (prefix-numeric-value arg)))
+    (self-insert-command (prefix-numeric-value arg)))
   (if terra-electric-flag
       (terra-indent-line))
   (blink-matching-open))
@@ -1062,7 +1062,7 @@ ignored, nil otherwise."
      (regexp-opt '("{" "(" "[" "]" ")" "}") t))))
 
 (defmacro tsym (&rest symbols)
-  `(terra-rx-to-string ,(cons 'symbol symbols))
+  `(terra-rx-to-string ,(cons 'symbol symbols)))
 
 (defconst terra-block-token-alist
   ;; KEYWORD FORWARD-MATCH-REGEXP BACKWARDS-MATCH-REGEXP TOKEN-TYPE
@@ -1189,7 +1189,7 @@ TOKEN-TYPE determines where the token occurs on a statement. open indicates that
 
 (defun terra-get-token-type (token-info)
   "Returns the relevant match regexp from token info"
-   (nth 3 token-info))
+  (nth 3 token-info))
 
 (defun terra-backwards-to-block-begin-or-end ()
   "Move backwards to nearest block begin or end.  Returns nil if not successful."
@@ -1252,7 +1252,7 @@ DIRECTION has to be either 'forward or 'backward."
                               (eq match-type found-type))
                           (goto-char found-pos)
                           (terra-find-matching-token-word found-token
-                                                        search-direction)))
+                                                          search-direction)))
                     (when maybe-found-pos
                       (goto-char maybe-found-pos)
                       (throw 'found maybe-found-pos)))
@@ -1285,7 +1285,7 @@ DIRECTION has to be 'forward or 'backward ('forward by default)."
   (let ((case-fold-search nil))
     (if (looking-at terra-indentation-modifier-regexp)
         (let ((position (terra-find-matching-token-word (match-string 0)
-                                                      direction)))
+                                                        direction)))
           (and position
                (goto-char position))))))
 
@@ -1490,12 +1490,12 @@ Don't use standalone."
    ;; either the next line will be indented correctly, or the end on the same
    ;; line will remove the effect of the else.
    ((string-equal found-token "else")
-     (save-excursion
-       (let ((line (line-number-at-pos)))
-         (if (and (terra-goto-matching-block-token found-pos 'backward)
-                  (= line (line-number-at-pos)))
-             (cons 'replace-matching (cons 'relative terra-indent-level))
-                   (cons 'relative terra-indent-level)))))
+    (save-excursion
+      (let ((line (line-number-at-pos)))
+        (if (and (terra-goto-matching-block-token found-pos 'backward)
+                 (= line (line-number-at-pos)))
+            (cons 'replace-matching (cons 'relative terra-indent-level))
+          (cons 'relative terra-indent-level)))))
 
    ;; Block closers. If they are on the same line as their openers, they simply
    ;; eat up the matching indentation modifier. Otherwise, they pull
@@ -1534,15 +1534,15 @@ when a middle-of the block (the only case is 'else') is seen on the same line
 the block is opened."
   (cond
    ( (eq 'remove-matching (car pair))
-     ; Remove head of list
+                                        ; Remove head of list
      (cdr info))
    ( (eq 'replace-matching (car pair))
-     ; remove head of list, and add the cdr of pair instead
+                                        ; remove head of list, and add the cdr of pair instead
      (cons (cdr pair) (cdr info)))
    ( (listp (cdr-safe pair))
      (nconc pair info))
    ( t
-     ; Just add the pair
+                                        ; Just add the pair
      (cons pair info))))
 
 (defun terra-calculate-indentation-info-1 (indentation-info bound)
@@ -1550,7 +1550,7 @@ the block is opened."
 
 Return list of indentation modifiers from point to BOUND."
   (while (terra-find-regexp 'forward terra-indentation-modifier-regexp
-                          bound)
+                            bound)
     (let ((found-token (match-string 0))
           (found-pos (match-beginning 0)))
       (setq indentation-info
@@ -2050,9 +2050,9 @@ left out."
   (interactive "P")
   (let ((num_arg (prefix-numeric-value arg)))
     (setq terra-electric-flag (cond ((or (null arg)
-                                       (zerop num_arg)) (not terra-electric-flag))
-                                  ((< num_arg 0) nil)
-                                  ((> num_arg 0) t))))
+                                         (zerop num_arg)) (not terra-electric-flag))
+                                    ((< num_arg 0) nil)
+                                    ((> num_arg 0) t))))
   (message "%S" terra-electric-flag))
 
 (defun terra-forward-sexp (&optional count)

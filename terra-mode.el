@@ -1471,13 +1471,13 @@ Don't use standalone."
 
    ;; These are not really block starters. They should not add to indentation.
    ;; The corresponding "then" and "do" handle the indentation.
-   ((member found-token (list "if" "for" "while" "switch" "match"))
+   ((member found-token (list "if" "for" "while" "switch" "match" "case"))
     (cons 'relative 0))
    ;; closing tokens follow: These are usually taken care of by
    ;; terra-calculate-indentation-override.
    ;; elseif is a bit of a hack. It is not handled separately, but it needs to
    ;; nullify a previous then if on the same line.
-   ((member found-token (list "until" "elseif" "case"))
+   ((member found-token (list "until" "elseif"))
     (save-excursion
       (let ((line (line-number-at-pos)))
         (if (and (terra-goto-matching-block-token found-pos 'backward)

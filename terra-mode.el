@@ -1062,57 +1062,57 @@ ignored, nil otherwise."
      (regexp-opt '("{" "(" "[" "]" ")" "}") t))))
 
 (defmacro tsym (&rest symbols)
-  `(terra-rx-to-string ,(cons 'symbol symbols)))
+  "Return a regexp string matching the SYMBOLS."
+  `(terra-rx-to-string (quote ,(cons 'symbol symbols))))
 
 (defconst terra-block-token-alist
   ;; KEYWORD FORWARD-MATCH-REGEXP BACKWARDS-MATCH-REGEXP TOKEN-TYPE
   `(("do"
-     ,(terra-rx-to-string (symbol "end" "else"))
-     ,(terra-rx-to-string (symbol "for" "while"))
+     ,(tsym "end" "else")
+     ,(tsym "for" "while")
      middle-or-open)
     ("function"
-     ,(terra-rx-to-string (symbol "end"))
+     ,(tsym "end")
      nil
      open)
     ("repeat"
-     ,(terra-rx-to-string (symbol "until"))
+     ,(tsym "until")
      nil
      open)
     ("then"
-     ,(terra-rx-to-string (symbol "else" "elseif" "end" "case"))
-     ,(terra-rx-to-string (symbol "if" "elseif" "case"))
+     ,(tsym "else" "elseif" "end" "case")
+     ,(tsym "if" "elseif" "case")
      middle)
     ("{"        "}"           nil                                       open)
     ("["        "]"           nil                                       open)
     ("("        ")"           nil                                       open)
     ("if"
-     ,(terra-rx-to-string (symbol "then"))
+     ,(tsym "then")
      nil
      open)
     ("for"
-     ,(terra-rx-to-string (symbol "do"))
+     ,(tsym "do")
      nil
      open)
     ("while"
-     ,(terra-rx-to-string (symbol "do"))
+     ,(tsym "do")
      nil
      open)
     ("else"
-     ,(terra-rx-to-string (symbol "end"))
-     ,(terra-rx-to-string (symbol "then"))
+     ,(tsym "end")
+     ,(tsym "then")
      middle)
     ("elseif"
-     ,(terra-rx-to-string (symbol "then"))
-     ,(terra-rx-to-string (symbol "then"))
+     ,(tsym "then")
+     ,(tsym "then")
      middle)
     ("end"
      nil
-     ,(terra-rx-to-string (symbol "do" "function" "then" "else" "escape" "quote"
-                                  "terra" "with"))
+     ,(tsym "do" "function" "then" "else" "escape" "quote" "terra" "with")
      close) ;; Terra keywords
     ("until"
      nil
-     ,(terra-rx-to-string (symbol "repeat"))
+     ,(tsym "repeat")
      close)
     ("}"        nil           "{"                                       close)
     ("]"        nil           "\\["                                     close)
@@ -1120,32 +1120,32 @@ ignored, nil otherwise."
 
     ;; Terra keywords
     ("escape"
-     ,(terra-rx-to-string (symbol "end"))
+     ,(tsym "end")
      nil
      open)
     ("quote"
-     ,(terra-rx-to-string (symbol "end"))
+     ,(tsym "end")
      nil
      open)
     ("terra"
-     ,(terra-rx-to-string (symbol "end"))
+     ,(tsym "end")
      nil
      open)
     ("switch"
-     ,(terra-rx-to-string (symbol "do"))
+     ,(tsym "do")
      nil
      open)
     ("case"
-     ,(terra-rx-to-string (symbol "then"))
-     ,(terra-rx-to-string (symbol "do" "then"))
+     ,(tsym "then")
+     ,(tsym "do" "then")
      middle)
     ("match"
-     ,(terra-rx-to-string (symbol "with"))
+     ,(tsym "with")
      nil
      open)
     ("with"
-     ,(terra-rx-to-string (symbol "then" "end"))
-     ,(terra-rx-to-string (symbol "match"))
+     ,(tsym "then" "end")
+     ,(tsym "match")
      middle))
   "This is a list of block token information blocks.
 Each token information entry is of the form:
@@ -1157,24 +1157,24 @@ TOKEN-TYPE determines where the token occurs on a statement. open indicates that
 
 (defconst terra-indentation-modifier-regexp
   (terra-rx-to-string
-   (or
-    (group
-     (or
-      (symbol "do" "function" "repeat" "then" "if" "else" "elseif" "for" "while"
+   '(or
+     (group
+      (or
+       (symbol "do" "function" "repeat" "then" "if" "else" "elseif" "for" "while"
 
-              ;; Terra keywords
-              "escape"
-              "quote"
-              "terra"
-              "case"
-              "switch"
-              "match"
-              "with")
-      (or "{" "(" "[")))
-    (group
-     (or
-      (symbol "end" "until")
-      (or "]" ")" "}"))))))
+               ;; Terra keywords
+               "escape"
+               "quote"
+               "terra"
+               "case"
+               "switch"
+               "match"
+               "with")
+       (or "{" "(" "[")))
+     (group
+      (or
+       (symbol "end" "until")
+       (or "]" ")" "}"))))))
 
 (defun terra-get-block-token-info (token)
   "Returns the block token info entry for TOKEN from terra-block-token-alist"
@@ -1324,30 +1324,30 @@ Returns final value of point as integer or nil if operation failed."
 
 (defconst terra-cont-eol-regexp
   (eval-when-compile
-    (,(terra-rx-to-string
-       (seq
-        (group
-         (or
-          (symbol
-           "and" "or" "not" "in" "for" "while"
-           "local" "function" "if" "until" "elseif" "return"
+    (terra-rx-to-string
+     '(seq
+       (group
+        (or
+         (symbol
+          "and" "or" "not" "in" "for" "while"
+          "local" "function" "if" "until" "elseif" "return"
 
-           ;; Terra keywords
-           "case"
-           "defer"
-           "import"
-           "match"
-           "switch"
-           "terra"
-           "var")
-          (group
-           (or line-start
-               (not terra-operator-class)))
-          (symbol "+" "-" "*" "/" "%" "^" ".." "=="
-                  "=" "<" ">" "<=" ">=" "~=" "." ":"
-                  "&" "|" "~" ">>" "<<" "~" "->")))
-        ws (* " ") point
-        ))))
+          ;; Terra keywords
+          "case"
+          "defer"
+          "import"
+          "match"
+          "switch"
+          "terra"
+          "var")
+         (group
+          (or line-start
+              (not terra-operator-class)))
+         (symbol "+" "-" "*" "/" "%" "^" ".." "=="
+                 "=" "<" ">" "<=" ">=" "~=" "." ":"
+                 "&" "|" "~" ">>" "<<" "~" "->")))
+       ws (* " ") point
+       )))
   "Regexp that matches the ending of a line that needs continuation.
 
 This regexp starts from eol and looks for a binary operator or an unclosed
@@ -1356,16 +1356,16 @@ an optional whitespace till the end of the line.")
 
 (defconst terra-cont-bol-regexp
   (eval-when-compile
-    (,(terra-rx-to-string
-       'point ws (* " ")
-       (group
-        (or (symbol "and" "or" "not")
-            (symbol "+" "-" "*" "/" "%" "^" ".." "=="
-                    "=" "<" ">" "<=" ">=" "~=" "." ":"
-                    "&" "|" "~" ">>" "<<" "~" "->")
-            (group
-             (or line-end
-                 (not terra-operator-class))))))))
+    (terra-rx-to-string
+     '(seq point ws (* " ")
+           (group
+            (or (symbol "and" "or" "not")
+                (symbol "+" "-" "*" "/" "%" "^" ".." "=="
+                        "=" "<" ">" "<=" ">=" "~=" "." ":"
+                        "&" "|" "~" ">>" "<<" "~" "->")
+                (group
+                 (or line-end
+                     (not terra-operator-class))))))))
   "Regexp that matches a line that continues previous one.
 
 This regexp means, starting from point there is an optional whitespace followed

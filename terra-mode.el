@@ -305,11 +305,8 @@ Should be a list of strings."
                 (function :tag "Other function"))
   :group 'terra)
 
-(defcustom terra-documentation-url
-  (or (and (file-readable-p "/usr/share/doc/lua/manual.html")
-           "file:///usr/share/doc/lua/manual.html")
-      "http://www.lua.org/manual/5.1/manual.html")
-  "URL pointing to the Lua reference manual."
+(defcustom terra-documentation-url "http://terralang.org/api.html"
+  "URL pointing to the Terra API reference."
   :type 'string
   :group 'terra)
 

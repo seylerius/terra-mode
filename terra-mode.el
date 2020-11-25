@@ -310,6 +310,11 @@ Should be a list of strings."
   :type 'string
   :group 'terra)
 
+(defcustom terra-debug-messages nil
+  "Toggle setting for whether terra-mode internal debug messages are generated."
+  :type 'boolean
+  :group 'terra)
+
 
 (defvar terra-process nil
   "The active Terra process")
@@ -1220,6 +1225,11 @@ DIRECTION has to be either 'forward or 'backward."
     ;; (i.e. for a closing token), need to step one character forward
     ;; first, or the regexp will match the opening token.
     (if (eq search-direction 'forward) (forward-char 1))
+
+    ;; Add debugging messages
+    (if terra-debug-messages
+        (message "Matching token `%s' of type `%s'" token match-type))
+
     (catch 'found
       ;; If we are attempting to find a matching token for a terminating token
       ;; (i.e. a token that starts a statement when searching back, or a token
@@ -1229,48 +1239,81 @@ DIRECTION has to be either 'forward or 'backward."
                    (eq match-type 'close))
               (and (eq search-direction 'backward)
                    (eq match-type 'open)))
-          (throw 'found nil))
+          (progn
+            (if terra-debug-messages
+                (message "This is a %s token and we're searching %s. Not matchable."
+                         match-type search-direction))
+            (throw 'found nil)))
       (while (terra-find-regexp search-direction terra-indentation-modifier-regexp)
         ;; have we found a valid matching token?
         (let ((found-token (match-string 0))
               (found-pos (match-beginning 0)))
           (let ((found-type (terra-get-token-type
                              (terra-get-block-token-info found-token))))
+            (if terra-debug-messages
+                (message "Found token `%s' of type `%s' on L%s (C%s)"
+                         found-token
+                         found-type
+                         (line-number-at-pos found-pos)
+                         found-pos))
             (if (not (and match (string-match match found-token)))
                 ;; no - then there is a nested block. If we were looking for
                 ;; a block begin token, found-token must be a block end
                 ;; token; likewise, if we were looking for a block end token,
                 ;; found-token must be a block begin token, otherwise there
                 ;; is a grammatical error in the code.
-                (if (and (eq search-direction 'backward)
-                         (not (eq found-type 'close))
-                         (not (eq match-type 'close)))
-                    (progn
-                      (if maybe-found-pos (goto-char maybe-found-pos))
-                      (throw 'found maybe-found-pos))
-                  (if (not (and
-                            (or (eq match-type 'middle)
-                                (eq found-type 'middle)
-                                (eq match-type 'middle-or-open)
-                                (eq found-type 'middle-or-open)
-                                (eq match-type found-type))
-                            (goto-char found-pos)
-                            (terra-find-matching-token-word found-token
-                                                            search-direction)))
-                      (when maybe-found-pos
-                        (goto-char maybe-found-pos)
-                        (throw 'found maybe-found-pos))))
+                (progn
+                  (if terra-debug-messages (message "Not a valid match"))
+                  (if (and (eq search-direction 'backward)
+                           (not (eq found-type 'close))
+                           (not (eq match-type 'close)))
+                      (progn
+                        (if maybe-found-pos
+                            (progn
+                              (goto-char maybe-found-pos)
+                              (if terra-debug-messages
+                                  (message
+                                   "Belongs to an entirely different block"))))
+                        (throw 'found maybe-found-pos))
+                    (if (not (and
+                              (or (eq match-type 'middle)
+                                  (eq found-type 'middle)
+                                  (eq match-type 'middle-or-open)
+                                  (eq found-type 'middle-or-open)
+                                  (eq match-type found-type))
+                              (goto-char found-pos)
+                              (if terra-debug-messages
+                                  (message "Attempting nested search") t)
+                              (terra-find-matching-token-word found-token
+                                                              search-direction)))
+                        (when maybe-found-pos
+                          (if terra-debug-messages
+                              (message "Possibly done here, returning L%s (C%s)"
+                                       (line-number-at-pos maybe-found-pos)
+                                       maybe-found-pos))
+                          (goto-char maybe-found-pos)
+                          (throw 'found maybe-found-pos)))))
               ;; yes.
               ;; if it is a not a middle kind, report the location
               (when (not (or (eq found-type 'middle)
                              (eq found-type 'middle-or-open)))
+                (if terra-debug-messages
+                    (message "Possibly found something, returning returning L%s (C%s)"
+                                       (line-number-at-pos found-pos)
+                                       found-pos))
                 (throw 'found found-pos))
               ;; if it is a middle-or-open type, record location, but keep searching.
               ;; If we fail to complete the search, we'll report the location
               (when (eq found-type 'middle-or-open)
+                (if terra-debug-messages
+                    (message "Possible open, tagging L%s (C%s) and continuing"
+                                       (line-number-at-pos found-pos)
+                                       found-pos))
                 (setq maybe-found-pos found-pos))
               ;; Cannot use tail recursion. too much nesting on long chains of
               ;; if/elseif. Will reset variables instead.
+              (if terra-debug-messages
+                  (message "Resetting variables and looping"))
               (setq token found-token)
               (setq token-info (terra-get-block-token-info token))
               (setq match (terra-get-token-match-re token-info search-direction))
@@ -1293,6 +1336,8 @@ DIRECTION has to be 'forward or 'backward ('forward by default)."
           (and position
                (goto-char position))))))
 
+
+;; TODO: Add a default keybind for this
 (defun terra-goto-matching-block (&optional noreport)
   "Go to the keyword balancing the one under the point.
 If the point is on a keyword/brace that starts a block, go to the
@@ -1563,7 +1608,13 @@ Return list of indentation modifiers from point to BOUND."
       (setq indentation-info
             (terra-add-indentation-info-pair
              (terra-make-indentation-info-pair found-token found-pos)
-             indentation-info))))
+             indentation-info))
+      (if terra-debug-messages
+          (message "Found token `%s' at L%s (C%s): %s"
+                   found-token
+                   (line-number-at-pos found-pos)
+                   found-pos
+                   indentation-info))))
   indentation-info)
 
 
@@ -1577,6 +1628,9 @@ and relative each, and the shift/column to indent to."
 
     (while (terra-is-continuing-statement-p)
       (terra-forward-line-skip-blanks 'back))
+
+    (if terra-debug-messages
+      (message "Parsing from chars %s to %s" (point) parse-end))
 
     ;; calculate indentation modifiers for the line itself
     (setq indentation-info (list (cons 'absolute (current-indentation))))
@@ -1594,10 +1648,14 @@ and relative each, and the shift/column to indent to."
       (if (terra-is-continuing-statement-p)
           ;; if it's the first continuation line, add one level
           (unless (eq (car (car indentation-info)) 'continued-line)
+            (if terra-debug-messages
+                (message "Found a continuation token"))
             (push (cons 'continued-line terra-indent-level) indentation-info))
 
         ;; if it's the first non-continued line, subtract one level
         (when (eq (car (car indentation-info)) 'continued-line)
+          (if terra-debug-messages
+              (message "Dropped a continuation token"))
           (pop indentation-info)))
 
       ;; add modifiers found in this continuation line
@@ -1740,6 +1798,8 @@ If not, return nil."
             (and (looking-at terra-indentation-modifier-regexp)
                  (setq token-info (terra-get-block-token-info (match-string 0)))
                  (not (eq 'open (terra-get-token-type token-info))))
+          (if terra-debug-messages
+              (message "Checking override for token: %s" token-info))
           (setq block-token-pos (match-beginning 0))
           (goto-char (match-end 0))
           (skip-syntax-forward " " (line-end-position)))
@@ -1747,6 +1807,7 @@ If not, return nil."
         (when (terra-goto-matching-block-token block-token-pos 'backward)
           ;; Exception cases: when the start of the line is an assignment,
           ;; go to the start of the assignment instead of the matching item
+          (if terra-debug-messages (message "Indentation overridden"))
           (if (or (not terra-indent-close-paren-align)
                   (terra-point-is-after-left-shifter-p))
               (current-indentation)
@@ -1755,22 +1816,31 @@ If not, return nil."
 (defun terra-calculate-indentation ()
   "Return appropriate indentation for current line as Terra code."
   (save-excursion
-    (let ((cur-line-begin-pos (line-beginning-position)))
-      (or
-              ;; when calculating indentation, do the following:
-              ;; 1. check, if the line starts with indentation-modifier (open/close brace)
-              ;;    and if it should be indented/unindented in special way
-              (terra-calculate-indentation-override)
+    (if terra-debug-messages
+        (message "Calculating indentation for line %s"
+                 (line-number-at-pos (point))))
+    (let* ((cur-line-begin-pos (line-beginning-position))
+           (result (or
+                    ;; when calculating indentation, do the following:
+                    ;; 1. check, if the line starts with indentation-modifier (open/close brace)
+                    ;;    and if it should be indented/unindented in special way
+                    (terra-calculate-indentation-override)
 
-              (when (terra-forward-line-skip-blanks 'back)
-                ;; the order of function calls here is important. block modifier
-                ;; call may change the point to another line
-                (let* ((modifier
-                        (terra-calculate-indentation-block-modifier cur-line-begin-pos)))
-                  (+ (current-indentation) modifier)))
+                    (when (terra-forward-line-skip-blanks 'back)
+                      ;; the order of function calls here is important. block modifier
+                      ;; call may change the point to another line
+                      (let* ((modifier
+                              (terra-calculate-indentation-block-modifier
+                               cur-line-begin-pos)))
+                        (+ (current-indentation) modifier)))
 
-              ;; 4. if there's no previous line, indentation is 0
-              0))))
+                    ;; 4. if there's no previous line, indentation is 0
+                    0)))
+      (if terra-debug-messages
+          (message "Indenting line %s to %s"
+                   (line-number-at-pos cur-line-begin-pos)
+                   result))
+      result)))
 
 (defvar terra--beginning-of-defun-re
   (terra-rx-to-string '(: bol (? (symbol "local") ws+) terra-funcheader))

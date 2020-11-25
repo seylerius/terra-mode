@@ -1499,7 +1499,6 @@ Don't use standalone."
    ;; The special cases are for indenting according to the location of the
    ;; function. i.e.:
    ;;       (cons 'absolute (+ (current-column) terra-indent-level))
-   ;; TODO: Fix this. It causes really ugly indentations for in-line functions.
    ((string-equal found-token "function")
     (cons 'relative terra-indent-level))
 

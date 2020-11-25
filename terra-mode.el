@@ -1069,7 +1069,7 @@ ignored, nil otherwise."
   ;; KEYWORD FORWARD-MATCH-REGEXP BACKWARDS-MATCH-REGEXP TOKEN-TYPE
   `(("do"
      ,(tsym "end" "else")
-     ,(tsym "for" "while")
+     ,(tsym "for" "while" "switch")
      middle-or-open)
     ("function"
      ,(tsym "end")
@@ -1100,7 +1100,7 @@ ignored, nil otherwise."
      open)
     ("else"
      ,(tsym "end")
-     ,(tsym "then")
+     ,(tsym "then" "do")
      middle)
     ("elseif"
      ,(tsym "then")
@@ -1137,8 +1137,8 @@ ignored, nil otherwise."
      open)
     ("case"
      ,(tsym "then")
-     ,(tsym "do" "then")
-     middle)
+     ,(tsym "then")
+     middle-or-open)
     ("match"
      ,(tsym "with")
      nil
@@ -1218,6 +1218,7 @@ DIRECTION has to be either 'forward or 'backward."
                                'backward))
          (match (terra-get-token-match-re token-info search-direction))
          maybe-found-pos)
+
     ;; if we are searching forward from the token at the current point
     ;; (i.e. for a closing token), need to step one character forward
     ;; first, or the regexp will match the opening token.
@@ -1244,18 +1245,24 @@ DIRECTION has to be either 'forward or 'backward."
                 ;; token; likewise, if we were looking for a block end token,
                 ;; found-token must be a block begin token, otherwise there
                 ;; is a grammatical error in the code.
-                (if (not (and
-                          (or (eq match-type 'middle)
-                              (eq found-type 'middle)
-                              (eq match-type 'middle-or-open)
-                              (eq found-type 'middle-or-open)
-                              (eq match-type found-type))
-                          (goto-char found-pos)
-                          (terra-find-matching-token-word found-token
-                                                          search-direction)))
-                    (when maybe-found-pos
-                      (goto-char maybe-found-pos)
-                      (throw 'found maybe-found-pos)))
+                (if (and (eq search-direction 'backward)
+                         (not (eq found-type 'close))
+                         (not (eq match-type 'close)))
+                    (progn
+                      (if maybe-found-pos (goto-char maybe-found-pos))
+                      (throw 'found maybe-found-pos))
+                  (if (not (and
+                            (or (eq match-type 'middle)
+                                (eq found-type 'middle)
+                                (eq match-type 'middle-or-open)
+                                (eq found-type 'middle-or-open)
+                                (eq match-type found-type))
+                            (goto-char found-pos)
+                            (terra-find-matching-token-word found-token
+                                                            search-direction)))
+                      (when maybe-found-pos
+                        (goto-char maybe-found-pos)
+                        (throw 'found maybe-found-pos))))
               ;; yes.
               ;; if it is a not a middle kind, report the location
               (when (not (or (eq found-type 'middle)
@@ -1340,13 +1347,14 @@ Returns final value of point as integer or nil if operation failed."
           "switch"
           "terra"
           "var")
-         (group
-          (or line-start
-              (not terra-operator-class)))
-         (symbol "+" "-" "*" "/" "%" "^" ".." "=="
-                 "=" "<" ">" "<=" ">=" "~=" "." ":"
-                 "&" "|" "~" ">>" "<<" "~" "->")))
-       ws (* " ") point
+         (seq
+          (group
+           (or line-start
+               (not terra-operator-class)))
+          (symbol "+" "-" "*" "/" "%" "^" ".." "=="
+                  "=" "<" ">" "<=" ">=" "~=" "." ":"
+                  "&" "|" "~" ">>" "<<" "~" "->"))))
+       (* (any " " "\t" "\n" "\r")) point
        )))
   "Regexp that matches the ending of a line that needs continuation.
 
@@ -1357,15 +1365,16 @@ an optional whitespace till the end of the line.")
 (defconst terra-cont-bol-regexp
   (eval-when-compile
     (terra-rx-to-string
-     '(seq point ws (* " ")
+     '(seq point (* (any " " "\t" "\n" "\r"))
            (group
             (or (symbol "and" "or" "not")
-                (symbol "+" "-" "*" "/" "%" "^" ".." "=="
-                        "=" "<" ">" "<=" ">=" "~=" "." ":"
-                        "&" "|" "~" ">>" "<<" "~" "->")
-                (group
-                 (or line-end
-                     (not terra-operator-class))))))))
+                (seq
+                 (or "+" "-" "*" "/" "%" "^" ".." "=="
+                     "=" "<" ">" "<=" ">=" "~=" "." ":"
+                     "&" "|" "~" ">>" "<<" "~" "->")
+                 (group
+                  (or line-end
+                      (not terra-operator-class)))))))))
   "Regexp that matches a line that continues previous one.
 
 This regexp means, starting from point there is an optional whitespace followed
@@ -1402,7 +1411,8 @@ previous one even though it looked like an end-of-statement.")
     (concat
      "\\(\\_<"
      (regexp-opt '("do" "while" "repeat" "until" "if" "then"
-                   "else" "elseif" "end" "for" "local") t)
+                   "else" "elseif" "end" "for" "local"
+                   "case") t)
      "\\_>\\)")))
 
 (defun terra-first-token-starts-block-p ()
@@ -1669,6 +1679,7 @@ one."
 
                   ;; Terra keywords
                   "terra"
+                  "quote"
 
                   (seq (group-n 1 (eval terra--function-name-rx) (* blank))
                        (any "({")))))))
@@ -1749,20 +1760,20 @@ If not, return nil."
   (save-excursion
     (let ((cur-line-begin-pos (line-beginning-position)))
       (or
-       ;; when calculating indentation, do the following:
-       ;; 1. check, if the line starts with indentation-modifier (open/close brace)
-       ;;    and if it should be indented/unindented in special way
-       (terra-calculate-indentation-override)
+              ;; when calculating indentation, do the following:
+              ;; 1. check, if the line starts with indentation-modifier (open/close brace)
+              ;;    and if it should be indented/unindented in special way
+              (terra-calculate-indentation-override)
 
-       (when (terra-forward-line-skip-blanks 'back)
-         ;; the order of function calls here is important. block modifier
-         ;; call may change the point to another line
-         (let* ((modifier
-                 (terra-calculate-indentation-block-modifier cur-line-begin-pos)))
-           (+ (current-indentation) modifier)))
+              (when (terra-forward-line-skip-blanks 'back)
+                ;; the order of function calls here is important. block modifier
+                ;; call may change the point to another line
+                (let* ((modifier
+                        (terra-calculate-indentation-block-modifier cur-line-begin-pos)))
+                  (+ (current-indentation) modifier)))
 
-       ;; 4. if there's no previous line, indentation is 0
-       0))))
+              ;; 4. if there's no previous line, indentation is 0
+              0))))
 
 (defvar terra--beginning-of-defun-re
   (terra-rx-to-string '(: bol (? (symbol "local") ws+) terra-funcheader))

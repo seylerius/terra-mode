@@ -1268,6 +1268,8 @@ DIRECTION has to be either 'forward or 'backward."
                            (not (eq found-type 'close))
                            (not (eq match-type 'close)))
                       (progn
+                        ;; FIXME: Need to track that `else' belongs to `switch',
+                        ;; not `case'
                         (if maybe-found-pos
                             (progn
                               (goto-char maybe-found-pos)
@@ -1815,6 +1817,7 @@ If not, return nil."
 
 (defun terra-calculate-indentation ()
   "Return appropriate indentation for current line as Terra code."
+  ;; FIXME: `match' isn't working right yet, needs testing
   (save-excursion
     (if terra-debug-messages
         (message "Calculating indentation for line %s"

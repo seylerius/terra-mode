@@ -1712,6 +1712,7 @@ one."
     "Terra function name regexp in `rx'-SEXP format."))
 
 
+;; FIXME: `emit quote' is not being recognized as a left-shifter
 (defconst terra--left-shifter-regexp
   (eval-when-compile
     (rx

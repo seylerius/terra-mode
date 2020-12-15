@@ -123,6 +123,8 @@
            (ws+ (+ (any " \t")))
 
            (terra-name (symbol (seq (+ (any alpha "_")) (* (any alnum "_")))))
+           (terra-type (seq (*? terra-name ".") (group terra-name)))
+           (terra-name-typed (seq terra-name ws ":" ws terra-type))
            (terra-funcname (seq terra-name (* ws "." ws terra-name)
                                 (opt ws ":" ws terra-name)))
            (terra-funcheader
@@ -136,14 +138,20 @@
                                   "terra"
                                   "struct")))))
 
+           (terra-var
+            (seq "var" ws+ (group-n 1 terra-name) ws
+                 (or (seq "=" (or line-end (* nonl)))
+                     (seq ":" ws terra-type ws (opt "=") (or line-end
+                                                             (* nonl))))))
+
            (terra-int-type-literal
-            (seq (? "[uU]") (? "[lL]") (? "[lL]")))
+            (seq (? (any "u" "U")) (** 0 2 (any "l" "L"))))
            (terra-integer-decimal
-            (seq (+ "[1-9]") (* digit) terra-int-type-literal))
+            (seq (+ (any "1-9")) (* digit) terra-int-type-literal))
            (terra-integer-octal
-            (seq "0" (* "[0-7]") terra-int-type-literal))
+            (seq "0" (* (any "0-7")) terra-int-type-literal))
            (terra-integer-hex
-            (seq "0[xX]" (+ hex) terra-int-type-literal))
+            (seq "0" (any "xX") (+ hex) terra-int-type-literal))
            (terra-float
             (seq (or (seq (+ digit) (opt ".") (* digit))
                      (seq (* digit) (opt ".") (+ digit)))
@@ -232,6 +240,8 @@ element is itself expanded with `terra-rx-to-string'. "
             `((symbol terra--rx-symbol 1 nil)
               (ws . "[ \t]*") (ws+ . "[ \t]+")
               (terra-name :rx (symbol (regexp "[[:alpha:]_]+[[:alnum:]_]*")))
+              (terra-type (seq (*? terra-name ".") (group terra-name)))
+              (terra-name-typed (seq terra-name ws ":" ws terra-type))
               (terra-funcname
                :rx (seq terra-name (* ws "." ws terra-name)
                         (opt ws ":" ws terra-name)))
@@ -250,14 +260,19 @@ element is itself expanded with `terra-rx-to-string'. "
                                          ;; Terra keywords
                                          "struct"
                                          "terra")))))
+              (terra-var
+               (seq "var" ws+ (group-n 1 terra-name) ws
+                    (or (seq "=" (or line-end (* nonl)))
+                        (seq ":" ws terra-type ws (opt "=") (or line-end
+                                                                (* nonl))))))
               (terra-int-type-literal
-               (seq (? "[uU]") (? "[lL]") (? "[lL]")))
+               (seq (? (any "u" "U")) (** 0 2 (any "l" "L"))))
               (terra-integer-decimal
-               (seq (+ "[1-9]") (* digit) terra-int-type-literal))
+               (seq (+ (any "1-9")) (* digit) terra-int-type-literal))
               (terra-integer-octal
-               (seq "0" (* "[0-7]") terra-int-type-literal))
+               (seq "0" (* (any "0-7")) terra-int-type-literal))
               (terra-integer-hex
-               (seq "0[xX]" (+ hex) terra-int-type-literal))
+               (seq "0" (any "xX") (+ hex) terra-int-type-literal))
               (terra-float
                (seq (or (seq (+ digit) (opt ".") (* digit))
                         (seq (* digit) (opt ".") (+ digit)))
@@ -716,7 +731,7 @@ Groups 6-9 can be used in any of argument regexps."
     ;;                 ^^^^^^
     ;;  local foobar = function(x,y,z)
     ;;        ^^^^^^
-    (,(terra-rx line-start ws (symbol "local" "var"))
+    (,(terra-rx line-start ws (symbol "local"))
      (0 font-lock-keyword-face)
 
      ;; (* nonl) at the end is to consume trailing characters or otherwise they
@@ -732,6 +747,22 @@ Groups 6-9 can be used in any of argument regexps."
       (1 font-lock-variable-name-face nil noerror)
       (2 font-lock-warning-face t noerror)
       (3 font-lock-warning-face t noerror)))
+
+    (,(terra-rx line-start ws (opt (symbol "local")) ws terra-funcheader ws "(")
+     (,(terra-make-delimited-matcher (terra-rx terra-name) "," ")")
+      nil nil
+      (1 font-lock-variable-name-face nil noerror)))
+
+    (,(terra-rx (or "(" ",") ws terra-name ws ":" ws terra-type ws (or "," ")"))
+     (,(terra-rx ":" ws terra-type ws)
+      ,(re-search-backward (terra-rx ":")) nil
+      (1 font-lock-type-face t)))
+
+    ;; Handle terra variable declarations, with possible typing
+    (,(terra-rx terra-var)
+     (0 font-lock-keyword-face)
+     (1 font-lock-variable-name-face)
+     (2 font-lock-type-face t noerror))
 
     (,(terra-rx (or bol ";") ws terra-funcheader)
      (1 font-lock-function-name-face))

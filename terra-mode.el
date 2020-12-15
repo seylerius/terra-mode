@@ -362,10 +362,10 @@ Should be a list of strings."
 
 
 (defvar terra-process nil
-  "The active Terra process")
+  "The active Terra process.")
 
 (defvar terra-process-buffer nil
-  "Buffer used for communication with the Terra process")
+  "Buffer used for communication with the Terra process.")
 
 (defun terra--customize-set-prefix-key (prefix-key-sym prefix-key-val)
   (cl-assert (eq prefix-key-sym 'terra-prefix-key))
@@ -697,6 +697,9 @@ Groups 6-9 can be used in any of argument regexps."
     (,(terra-rx (symbol "true" "false" "nil"))
      . font-lock-constant-face)
 
+    (,(terra-rx terra-number)
+     (0 . highlight-numbers-number))
+
     ;; Keywords
     (,(terra-rx terra-keyword)
      . font-lock-keyword-face)
@@ -755,7 +758,10 @@ Groups 6-9 can be used in any of argument regexps."
 
     (,(terra-rx (or "(" ",") ws terra-name ws ":" ws terra-type ws (or "," ")"))
      (,(terra-rx ":" ws terra-type ws)
-      ,(re-search-backward (terra-rx ":")) nil
+      ,(progn
+         (re-search-backward (terra-rx ":"))
+         (backward-char 2))
+      nil
       (1 font-lock-type-face t)))
 
     ;; Handle terra variable declarations, with possible typing

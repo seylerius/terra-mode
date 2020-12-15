@@ -697,7 +697,7 @@ Groups 6-9 can be used in any of argument regexps."
     (,(terra-rx (symbol "true" "false" "nil"))
      . font-lock-constant-face)
 
-    (,(terra-rx terra-number)
+    (,(terra-rx (not (any alpha "_" ".")) terra-number)
      (0 'highlight-numbers-number))
 
     ;; Keywords

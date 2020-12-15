@@ -127,9 +127,14 @@
                                 (opt ws ":" ws terra-name)))
            (terra-funcheader
             ;; Outer (seq ...) is here to shy-group the definition
-            (seq (or (seq (symbol "function") ws (group-n 1 terra-funcname))
+            (seq (or (seq (symbol "function"
+                                  "terra"
+                                  "struct")
+                          ws (group-n 1 terra-funcname))
                      (seq (group-n 1 terra-funcname) ws "=" ws
-                          (symbol "function")))))
+                          (symbol "function"
+                                  "terra"
+                                  "struct")))))
            (terra-number
             (seq (or (seq (+ digit) (opt ".") (* digit))
                      (seq (* digit) (opt ".") (+ digit)))
@@ -243,7 +248,7 @@ element is itself expanded with `terra-rx-to-string'. "
                        ">" "=" ";" ":" "," "." ".." "..."
 
                        ;; Terra tokens
-                       "`" "@"
+                       "`" "@" "->"
                        ))
               (terra-keyword
                :rx (symbol "and" "break" "do" "else" "elseif" "end"  "for" "function"
@@ -252,7 +257,7 @@ element is itself expanded with `terra-rx-to-string'. "
 
                            ;; Terra keywords
                            "defer" "emit" "escape" "import" "quote" "struct"
-                           "terra" "var"
+                           "terra" "var" "match" "switch" "case" "enum"
                            )))
             ))))
 

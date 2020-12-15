@@ -699,7 +699,7 @@ Groups 6-9 can be used in any of argument regexps."
 
     (,(terra-rx (or line-start
                     ws+
-                    (any terra-operator-class "," "(" ")" "[" "]"))
+                    (any "-" "+" "*" "/" "^" "." "=" "<" ">" "~" ":" "&" "|" "," "(" ")" "[" "]"))
                 (group-n 1 terra-number))
      (1 'highlight-numbers-number))
 

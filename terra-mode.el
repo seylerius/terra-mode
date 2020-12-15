@@ -135,10 +135,23 @@
                           (symbol "function"
                                   "terra"
                                   "struct")))))
-           (terra-number
+
+           (terra-int-type-literal
+            (seq (? "[uU]") (? "[lL]") (? "[lL]")))
+           (terra-integer-decimal
+            (seq (+ "[1-9]") (* digit) terra-int-type-literal))
+           (terra-integer-octal
+            (seq "0" (* "[0-7]") terra-int-type-literal))
+           (terra-integer-hex
+            (seq "0[xX]" (+ hex) terra-int-type-literal))
+           (terra-float
             (seq (or (seq (+ digit) (opt ".") (* digit))
                      (seq (* digit) (opt ".") (+ digit)))
                  (opt (regexp "[eE][+-]?[0-9]+"))))
+           (terra-number (or terra-integer-decimal
+                             terra-integer-octal
+                             terra-integer-hex
+                             terra-float))
            (terra-assignment-op (seq "=" (or buffer-end (not (any "=")))))
            (terra-token (or "+" "-" "*" "/" "%" "^" "#" "==" "~=" "<=" ">=" "<"
                             ">" "=" ";" ":" "," "." ".." "..."
@@ -237,10 +250,22 @@ element is itself expanded with `terra-rx-to-string'. "
                                          ;; Terra keywords
                                          "struct"
                                          "terra")))))
-              (terra-number
-               :rx (seq (or (seq (+ digit) (opt ".") (* digit))
-                            (seq (* digit) (opt ".") (+ digit)))
-                        (opt (regexp "[eE][+-]?[0-9]+"))))
+              (terra-int-type-literal
+               (seq (? "[uU]") (? "[lL]") (? "[lL]")))
+              (terra-integer-decimal
+               (seq (+ "[1-9]") (* digit) terra-int-type-literal))
+              (terra-integer-octal
+               (seq "0" (* "[0-7]") terra-int-type-literal))
+              (terra-integer-hex
+               (seq "0[xX]" (+ hex) terra-int-type-literal))
+              (terra-float
+               (seq (or (seq (+ digit) (opt ".") (* digit))
+                        (seq (* digit) (opt ".") (+ digit)))
+                    (opt (regexp "[eE][+-]?[0-9]+"))))
+              (terra-number (or terra-integer-decimal
+                                terra-integer-octal
+                                terra-integer-hex
+                                terra-float))
               (terra-assignment-op
                :rx (seq "=" (or buffer-end (not (any "=")))))
               (terra-token

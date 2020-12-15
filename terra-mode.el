@@ -716,7 +716,7 @@ Groups 6-9 can be used in any of argument regexps."
     ;;                 ^^^^^^
     ;;  local foobar = function(x,y,z)
     ;;        ^^^^^^
-    ("^[ \t]*\\_<local\\_>"
+    (,(terra-rx line-start ws (symbol "local" "var"))
      (0 font-lock-keyword-face)
 
      ;; (* nonl) at the end is to consume trailing characters or otherwise they

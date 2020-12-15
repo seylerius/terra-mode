@@ -758,9 +758,10 @@ Groups 6-9 can be used in any of argument regexps."
 
     (,(terra-rx (or "(" ",") ws terra-name ws ":" ws terra-type ws (or "," ")"))
      (,(terra-rx ":" ws terra-type ws)
-      ,(progn
-         (re-search-backward (terra-rx ":"))
-         (backward-char 2))
+      ,(if (< 5 (point))
+           (progn
+             (re-search-backward (terra-rx ":"))
+             (backward-char 2)))
       nil
       (1 font-lock-type-face t)))
 
